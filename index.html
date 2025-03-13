@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background: black; }
+        canvas { display: block; }
+        #buttons {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            color: white;
+            border-radius: 5px;
+        }
+        .wooden { background-color: #8B5A2B; } /* Wooden Brown */
+        .grey { background-color: #A9A9A9; color: black; } /* Grey Skin */
+    </style>
+</head>
+<body>
+
+    <div id="buttons">
+        <button class="wooden" onclick="changeColor(0x8B5A2B)">Wooden Brown</button>
+        <button class="grey" onclick="changeColor(0xA9A9A9)">Grey Skin</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, model;
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); // Black background
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 2, 5);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(2, 2, 2);
+            scene.add(directionalLight);
+
+            // Load the GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load('chair.glb', function(gltf) {
+                model = gltf.scene;
+                model.position.set(0, 0, 0); // Adjust position if needed
+                model.scale.set(1, 1, 1); // Adjust scale if needed
+                scene.add(model);
+            }, undefined, function(error) {
+                console.error("Error loading model:", error);
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+
+            animate();
+        }
+
+        function changeColor(hexColor) {
+            if (!model) return;
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.color.setHex(hexColor);
+                    child.material.needsUpdate = true;
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+
+</body>
+</html>
